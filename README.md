@@ -31,3 +31,16 @@ python -m venv .venv
 - `freefall/models.py`: cuerpos y modelos de arrastre.
 - `freefall/analytic.py`: soluciones cerradas `y(t)`, `v(t)`.
 - `freefall/solvers.py`: pasos de Euler y RK4, integración con detección de impacto contra el suelo.
+- `freefall/scenarios.py`: escenarios del paracaidista y de las pelotas, y sus métricas.
+- `freefall/plots.py`: figuras estáticas.
+- `freefall/report.py`: formato de tablas.
+- `freefall/__main__.py`: interfaz de línea de comandos.
+
+## Uso
+
+```
+.venv/bin/python -m freefall paracaidista [--dt 0.01] [--metodo rk4|euler] [--altura 4000] [--salida results]
+.venv/bin/python -m freefall pelotas      [--dt 0.01] [--metodo rk4|euler] [--altura 56]   [--salida results]
+```
+
+Cada comando imprime una tabla de métricas y guarda las figuras en `results/`.

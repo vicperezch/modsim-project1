@@ -1,6 +1,6 @@
 import argparse
 
-from . import plots, report, scenarios
+from . import convergence, plots, report, scenarios
 
 
 def cmd_skydiver(args):
@@ -18,6 +18,17 @@ def cmd_balls(args):
     print(f"         {plots.plot_ball_summary(runs, reference, args.salida)}")
 
 
+def cmd_convergence(args):
+    print(f"Convergencia en [0, {args.t_final:g}] s contra la solución analítica\n")
+    results = convergence.run_convergence(args.t_final)
+    print(report.to_text(convergence.error_rows(results)))
+    print()
+    print(report.to_text(convergence.order_rows(results)))
+    model, t, exact, runs = convergence.large_step_runs(args.dt_grande)
+    print(f"\nFiguras: {plots.plot_convergence(results, args.salida)}")
+    print(f"         {plots.plot_large_step(model, t, exact, runs, args.dt_grande, args.salida)}")
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="freefall", description="Simulación de caída libre con resistencia del aire")
     sub = parser.add_subparsers(dest="comando", required=True)
@@ -30,6 +41,11 @@ def build_parser():
 
     sub.add_parser("paracaidista", parents=[common], help="salto de paracaidista").set_defaults(func=cmd_skydiver)
     sub.add_parser("pelotas", parents=[common], help="comparación de pelotas").set_defaults(func=cmd_balls)
+    conv = sub.add_parser("convergencia", help="análisis de convergencia de Euler y RK4")
+    conv.add_argument("--t-final", type=float, default=20.0, help="intervalo de integración en segundos")
+    conv.add_argument("--dt-grande", type=float, default=2.0, help="paso para la figura de comparación visual")
+    conv.add_argument("--salida", default="results", help="carpeta de salida")
+    conv.set_defaults(func=cmd_convergence)
     return parser
 
 

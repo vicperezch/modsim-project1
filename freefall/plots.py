@@ -5,6 +5,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from .analytic import solution
+from .convergence import ROUNDOFF_FLOOR
+
 SURFACE = "#fcfcfb"
 TEXT = "#0b0b0b"
 TEXT_MUTED = "#52514e"
@@ -146,3 +149,64 @@ def plot_ball_summary(runs, reference, outdir):
         ax.grid(axis="y", visible=False)
     fig.tight_layout()
     return _save(fig, outdir, "pelotas_resumen.png")
+
+
+METHOD_COLORS = {"euler": SERIES[0], "rk4": SERIES[1]}
+METHOD_ORDERS = {"euler": 1, "rk4": 4}
+
+
+def _reference_slope(ax, dts, errors, order, label):
+    anchor = errors[0] * 3
+    ref = anchor * (dts / dts[0]) ** order
+    ax.loglog(dts, ref, color=REFERENCE, linestyle=":", linewidth=1.2)
+    ax.annotate(label, (dts[0], ref[0]), xytext=(-4, 2), textcoords="offset points",
+                ha="right", va="bottom", color=TEXT_MUTED)
+
+
+def plot_convergence(results, outdir):
+    models = list(dict.fromkeys(r.model_name for r in results))
+    fig, axes = plt.subplots(len(models), 2, figsize=(11, 4.2 * len(models)), sharex=True)
+
+    for row, model_name in enumerate(models):
+        for col, (attr, quantity) in enumerate([("error_y", "posición y (m)"), ("error_v", "velocidad v (m/s)")]):
+            ax = axes[row, col]
+            for r in (r for r in results if r.model_name == model_name):
+                errors = getattr(r, attr)
+                ax.loglog(r.dts, errors, "o-", color=METHOD_COLORS[r.method], markersize=5,
+                          markeredgecolor=SURFACE, markeredgewidth=1, label=r.method.upper())
+                order = METHOD_ORDERS[r.method]
+                valid = errors > ROUNDOFF_FLOOR
+                _reference_slope(ax, r.dts[valid], errors[valid], order, "O(dt)" if order == 1 else f"O(dt^{order})")
+            ax.set_title(f"{model_name}: error máximo en {quantity}")
+            ax.set_ylabel("Error absoluto")
+            ax.invert_xaxis()
+            if row == len(models) - 1:
+                ax.set_xlabel("Paso de tiempo dt (s)")
+    axes[0, 0].legend(loc="center left")
+    fig.tight_layout()
+    return _save(fig, outdir, "convergencia.png")
+
+
+def plot_large_step(model, t, exact, runs, dt, outdir):
+    fig, (ax_v, ax_e) = plt.subplots(1, 2, figsize=(11, 4.2))
+    ax_v.plot(t, abs(exact[1]), color=TEXT, linewidth=1.5, label="Analítica")
+    for method, tr in runs.items():
+        color = METHOD_COLORS[method]
+        ax_v.plot(tr.t, abs(tr.v), "o-", color=color, markersize=6, markeredgecolor=SURFACE,
+                  markeredgewidth=1.5, linewidth=1.2, label=method.upper())
+        _, v_exact = solution(model, tr.t, tr.y[0])
+        ax_e.semilogy(tr.t[1:], abs(tr.v[1:] - v_exact[1:]), "o-", color=color, markersize=6,
+                      markeredgecolor=SURFACE, markeredgewidth=1.5, linewidth=1.2, label=method.upper())
+
+    ax_v.set_title(f"Rapidez con dt = {dt:g} s (modelo cuadrático)")
+    ax_v.set_xlabel("Tiempo (s)")
+    ax_v.set_ylabel("Rapidez de caída (m/s)")
+    ax_v.set_xlim(0, t[-1])
+    ax_v.set_ylim(bottom=0)
+    ax_v.legend(loc="lower right")
+    ax_e.set_title("Error absoluto en v respecto a la analítica")
+    ax_e.set_xlabel("Tiempo (s)")
+    ax_e.set_ylabel("Error (m/s)")
+    ax_e.set_xlim(0, t[-1])
+    fig.tight_layout()
+    return _save(fig, outdir, "metodos_dt_grande.png")

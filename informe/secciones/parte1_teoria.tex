@@ -1,0 +1,265 @@
+% Parte 1: fenómeno, marco teórico, métodos y metodología.
+% Se incluye desde informe.tex; no compilar este archivo solo.
+
+% ===========================================================================
+\section{Explicación del fenómeno}
+% ===========================================================================
+
+Un cuerpo que cae en el aire está sometido a dos fuerzas: su peso, que es constante, y la resistencia del aire (arrastre), que se opone al movimiento y crece con la rapidez. Al inicio de la caída el cuerpo se mueve despacio, el arrastre es pequeño y el cuerpo acelera casi como lo haría en el vacío. A medida que gana rapidez el arrastre aumenta, hasta que llega a igualar al peso. En ese momento la fuerza neta es cero, la aceleración desaparece y el cuerpo sigue cayendo a rapidez constante. Esa rapidez límite se llama \emph{velocidad terminal} y se denota $\vt$.
+
+Este comportamiento tiene consecuencias prácticas importantes. Un paracaidista en caída libre no acelera indefinidamente, sino que se estabiliza alrededor de los \qty{180}{km/h}; una gota de lluvia llega al suelo a pocos metros por segundo en lugar de hacerlo a la rapidez que tendría tras caer cientos de metros en el vacío. También explica por qué el resultado del experimento atribuido a Galileo, en el que objetos de distinta masa caen al mismo tiempo, solo se cumple de forma aproximada en presencia de aire.
+
+En este proyecto se estudia esta dinámica en una dimensión (solo movimiento vertical). Se comparan dos leyes de arrastre, una lineal y una cuadrática, junto con la caída en el vacío como referencia, en dos situaciones:
+\begin{enumerate}
+  \item un paracaidista en caída libre desde \qty{4000}{m};
+  \item cuatro pelotas de distintos deportes soltadas desde \qty{56}{m}.
+\end{enumerate}
+Además, se valida la implementación numérica con un análisis de convergencia de los dos métodos de integración utilizados.
+
+% ===========================================================================
+\section{Marco teórico}
+% ===========================================================================
+
+\subsection{Ecuación de movimiento}
+
+Se toma el eje $y$ positivo hacia arriba y se describe el estado del cuerpo con su altura $y$ y su velocidad $v$. Por la segunda ley de Newton, el movimiento queda descrito por el sistema de dos ecuaciones diferenciales ordinarias de primer orden
+\begin{equation}
+  \frac{dy}{dt} = v, \qquad \frac{dv}{dt} = -g + \frac{F_d(v)}{m},
+  \label{eq:movimiento}
+\end{equation}
+donde $m$ es la masa del cuerpo, $g$ la aceleración de la gravedad y $F_d(v)$ la fuerza de arrastre. Como el cuerpo cae, $v<0$ durante todo el movimiento.
+
+\subsection{Modelos de arrastre}
+
+Se consideran tres modelos para $F_d$, resumidos en el Cuadro~\ref{tab:modelos}. En cada caso, la velocidad terminal se obtiene al igualar el arrastre con el peso, es decir, al imponer $\dot v = 0$.
+
+\begin{table}[H]
+  \centering
+  \caption{Modelos de arrastre considerados.}
+  \label{tab:modelos}
+  \renewcommand{\arraystretch}{1.6}
+  \begin{tabular}{@{}llll@{}}
+    \toprule
+    Modelo & Fuerza $F_d(v)$ & Ecuación para $v$ & Velocidad terminal \\
+    \midrule
+    Vacío & $0$ & $\dot v = -g$ & no existe \\
+    Lineal (Stokes) & $-b\,v$ & $\dot v = -g - \dfrac{b}{m}\,v$ & $\vt = \dfrac{mg}{b}$ \\
+    Cuadrático & $-k\,v\lvert v\rvert$ & $\dot v = -g - \dfrac{k}{m}\,v\lvert v\rvert$ & $\vt = \sqrt{\dfrac{mg}{k}}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+En el modelo cuadrático, la constante de arrastre es
+\begin{equation}
+  k = \tfrac12 \rho\, C_d\, A,
+  \qquad\text{de modo que}\qquad
+  \vt = \sqrt{\frac{2mg}{\rho\, C_d\, A}},
+  \label{eq:k}
+\end{equation}
+donde $\rho$ es la densidad del aire, $C_d$ el coeficiente de arrastre y $A$ el área frontal del cuerpo. Se usa $v\lvert v\rvert$ en lugar de $v^2$ para que la fuerza siempre se oponga al movimiento, sin importar el signo de $v$.
+
+\subsection{Validez de cada modelo: número de Reynolds}
+
+El modelo adecuado depende del régimen del flujo alrededor del cuerpo, que se caracteriza con el número de Reynolds
+\begin{equation}
+  Re = \frac{\rho\, \lvert v\rvert\, L}{\mu},
+  \label{eq:reynolds}
+\end{equation}
+donde $L$ es una longitud característica (el diámetro, en el caso de una esfera) y $\mu$ la viscosidad dinámica del aire. El arrastre lineal solo es válido en el régimen de Stokes, $Re \lesssim 1$, que corresponde a partículas microscópicas como polvo o gotas de niebla. Para objetos macroscópicos en aire, en el rango $10^3 < Re < 2\times10^5$, el coeficiente $C_d$ de una esfera es aproximadamente constante (cercano a 0.47) y el arrastre es cuadrático~\cite{white}.
+
+Para dimensionar esto, la rapidez a la que $Re = 1$ es $v = \mu/(\rho L)$. Para una pelota de ping-pong esa rapidez es de \qty{0.00037}{m/s} y para una bola de boliche de \qty{0.000068}{m/s}. Cualquier caída real de estos objetos ocurre a rapideces varios órdenes de magnitud mayores, así que el modelo lineal no les aplica. En este proyecto el modelo lineal se usa como punto de comparación y para validar los métodos numéricos, ya que tiene una solución exacta sencilla.
+
+\subsection{Soluciones analíticas}
+\label{sec:analiticas}
+
+Los tres modelos tienen solución cerrada, lo que permite medir con exactitud el error de los métodos numéricos. Se denota $h_0$ la altura inicial y $v_0 \le 0$ la velocidad inicial; en todos los escenarios de este trabajo $v_0 = 0$.
+
+\paragraph{Vacío.}
+\begin{equation}
+  v(t) = v_0 - g t, \qquad y(t) = h_0 + v_0 t - \tfrac12 g t^2 .
+\end{equation}
+Desde el reposo, el tiempo de caída es $t = \sqrt{2h_0/g}$ y la rapidez de impacto es $\sqrt{2gh_0}$.
+
+\paragraph{Arrastre lineal.} Con $\tau = m/b$,
+\begin{align}
+  v(t) &= -\vt + (v_0 + \vt)\, e^{-t/\tau}, \\
+  y(t) &= h_0 - \vt t + \tau\,(v_0 + \vt)\left(1 - e^{-t/\tau}\right).
+\end{align}
+La rapidez se acerca a $\vt$ de forma exponencial. Desde el reposo, el tiempo para alcanzar el \qty{95}{\percent} de $\vt$ es $t_{95} = \tau \ln 20$.
+
+\paragraph{Arrastre cuadrático.} Para $-\vt < v_0 \le 0$, con $\tau_0 = \atanh(\lvert v_0\rvert/\vt)$~\cite{taylor},
+\begin{align}
+  v(t) &= -\vt \tanh\!\left(\frac{g t}{\vt} + \tau_0\right), \\
+  y(t) &= h_0 - \frac{\vt^2}{g}\,
+          \ln\frac{\cosh\!\left(\frac{g t}{\vt} + \tau_0\right)}{\cosh \tau_0}.
+\end{align}
+Desde el reposo, el tiempo para alcanzar el \qty{95}{\percent} de $\vt$ y el tiempo de caída hasta el suelo son
+\begin{equation}
+  t_{95} = \frac{\vt}{g}\,\atanh(0.95),
+  \qquad
+  t_{\text{imp}} = \frac{\vt}{g}\,\acosh\!\left(e^{g h_0/\vt^2}\right).
+\end{equation}
+
+En caídas largas, $\cosh x$ excede el rango de los números de punto flotante. Por eso, en la implementación se evalúa $\ln\cosh x$ mediante la identidad equivalente y numéricamente estable
+\begin{equation}
+  \ln\cosh x = \lvert x\rvert + \ln\!\left(1 + e^{-2\lvert x\rvert}\right) - \ln 2 .
+\end{equation}
+
+% ===========================================================================
+\section{Métodos de simulación}
+% ===========================================================================
+
+El sistema~\eqref{eq:movimiento} se escribe en forma vectorial con el estado $\bs = (y, v)$ y $\bff(\bs) = (v,\ a(v))$, donde $a(v) = -g + F_d(v)/m$. Para integrarlo se implementaron dos métodos de paso fijo, sin recurrir a bibliotecas como \texttt{scipy}~\cite{burden}.
+
+\subsection{Euler explícito}
+
+Es el método más simple: avanza el estado usando la derivada evaluada al inicio del paso,
+\begin{equation}
+  \bs_{n+1} = \bs_n + \Delta t\, \bff(\bs_n).
+\end{equation}
+Su error global es $O(\Delta t)$, es decir, es de orden~1.
+
+\subsection{Runge-Kutta de orden 4}
+
+RK4 combina cuatro evaluaciones de la derivada dentro de cada paso:
+\begin{gather}
+  \bk_1 = \bff(\bs_n), \quad
+  \bk_2 = \bff\!\left(\bs_n + \tfrac{\Delta t}{2}\bk_1\right), \quad
+  \bk_3 = \bff\!\left(\bs_n + \tfrac{\Delta t}{2}\bk_2\right), \quad
+  \bk_4 = \bff(\bs_n + \Delta t\,\bk_3), \\
+  \bs_{n+1} = \bs_n + \frac{\Delta t}{6}\left(\bk_1 + 2\bk_2 + 2\bk_3 + \bk_4\right).
+\end{gather}
+Su error global es $O(\Delta t^4)$. En la práctica, al dividir el paso entre 10 el error de Euler disminuye 10 veces y el de RK4 disminuye \num{10000} veces. A cambio, RK4 requiere 4 evaluaciones de $\bff$ por paso en lugar de una; medido en nuestra implementación, cada paso de RK4 tarda entre 4.5 y 5 veces más que uno de Euler.
+
+\subsection{Detección del impacto con el suelo}
+
+La integración avanza hasta el primer paso en el que $y \le 0$. Como el impacto ocurre, en general, entre dos pasos, su instante y su velocidad se estiman por interpolación lineal entre el último punto con $y > 0$ y el primero con $y \le 0$:
+\begin{equation}
+  s = \frac{y_n}{y_n - y_{n+1}}, \qquad
+  t_{\text{imp}} = t_n + s\,\Delta t, \qquad
+  v_{\text{imp}} = v_n + s\,(v_{n+1} - v_n).
+\end{equation}
+
+\subsection{Implementación}
+
+El simulador está escrito en Python, usando únicamente \texttt{numpy} para los arreglos y \texttt{matplotlib} para las figuras. El código se organiza en el paquete \texttt{freefall}:
+\begin{itemize}
+  \item \texttt{models.py}: cuerpos (masa, $C_d$, área, longitud característica) y modelos de arrastre;
+  \item \texttt{analytic.py}: soluciones exactas de la Sección~\ref{sec:analiticas};
+  \item \texttt{solvers.py}: pasos de Euler y RK4 e integración con detección del impacto;
+  \item \texttt{scenarios.py}: parámetros de los escenarios y cálculo de métricas;
+  \item \texttt{convergence.py}: errores contra la solución analítica y orden observado;
+  \item \texttt{plots.py}, \texttt{report.py} y \texttt{\_\_main\_\_.py}: figuras, tablas e interfaz de línea de comandos.
+\end{itemize}
+Cada modelo de arrastre es una clase que implementa la aceleración $a(v)$ y la velocidad terminal, de modo que los integradores son independientes del modelo. El Listado~\ref{lst:solvers} muestra el núcleo de los integradores.
+
+\begin{lstlisting}[caption={Pasos de Euler y RK4 y detección del impacto (\texttt{solvers.py}).}, label={lst:solvers}]
+def euler_step(f, state, dt):
+    return state + dt * f(state)
+
+def rk4_step(f, state, dt):
+    k1 = f(state)
+    k2 = f(state + 0.5 * dt * k1)
+    k3 = f(state + 0.5 * dt * k2)
+    k4 = f(state + dt * k3)
+    return state + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+
+# Dentro del ciclo de integración:
+new = step(f, states[-1], dt)
+if stop_at_ground and new[0] <= 0:
+    old = states[-1]
+    s = old[0] / (old[0] - new[0])
+    impact_time = times[-1] + s * dt
+    impact_velocity = old[1] + s * (new[1] - old[1])
+\end{lstlisting}
+
+% ===========================================================================
+\section{Metodología}
+% ===========================================================================
+
+\subsection{Parámetros generales}
+
+El Cuadro~\ref{tab:constantes} resume las constantes físicas y numéricas comunes a todos los escenarios. Salvo que se indique lo contrario, todas las simulaciones usan RK4 con $\Delta t = \qty{0.01}{s}$ y parten del reposo.
+
+\begin{table}[H]
+  \centering
+  \caption{Constantes usadas en todos los escenarios.}
+  \label{tab:constantes}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Constante & Valor \\
+    \midrule
+    Gravedad $g$ & \qty{9.81}{m/s^2} \\
+    Densidad del aire $\rho$ & \qty{1.225}{kg/m^3} (nivel del mar, \qty{15}{\degreeCelsius}) \\
+    Viscosidad dinámica del aire $\mu$ & \qty{1.81e-5}{\pascal\second} \\
+    Paso de tiempo por defecto $\Delta t$ & \qty{0.01}{s} \\
+    Método por defecto & RK4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Escenario 1: paracaidista}
+
+Se simula un salto desde \qty{4000}{m} en posición de vientre abajo, sin abrir el paracaídas, desde el reposo hasta el suelo. Los parámetros se muestran en el Cuadro~\ref{tab:paracaidista-param}. Se comparan los tres modelos: vacío, lineal y cuadrático.
+
+\begin{table}[H]
+  \centering
+  \caption{Parámetros del paracaidista.}
+  \label{tab:paracaidista-param}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Parámetro & Valor \\
+    \midrule
+    Masa $m$ & \qty{80}{kg} \\
+    Coeficiente de arrastre $C_d$ & 1.0 \\
+    Área frontal $A$ & \qty{0.5}{m^2} \\
+    Longitud característica $L$ (para $Re$) & \qty{1.8}{m} \\
+    $k = \tfrac12\rho C_d A$ & \qty{0.30625}{kg/m} \\
+    Velocidad terminal (cuadrático) & \qty{50.62}{m/s} (\qty{182}{km/h}) \\
+    $b$ del modelo lineal & \qty{15.503}{kg/s} \\
+    $\tau = m/b = \vt/g$ & \qty{5.160}{s} \\
+    $Re$ a velocidad terminal & \num{6.2e6} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Una decisión de diseño importante es la elección de $b$. Su valor no se tomó de la física del problema (el modelo lineal no aplica a un paracaidista, cuyo $Re$ es del orden de $10^6$), sino que se \emph{calibró para que la velocidad terminal fuera la misma que en el modelo cuadrático}: $b = mg/\vt$. De esta forma las curvas de ambos modelos terminan en el mismo valor y la comparación aísla únicamente la diferencia de forma entre una ley de arrastre lineal y una cuadrática. Con esta calibración, además, la escala de tiempo $m/b$ del modelo lineal coincide con $\vt/g$, la escala natural del modelo cuadrático (\qty{5.16}{s} en ambos casos).
+
+\subsection{Escenario 2: comparación de pelotas}
+
+Se sueltan desde el reposo cuatro pelotas reales a \qty{56}{m} de altura, la altura aproximada de la Torre de Pisa, en referencia al experimento atribuido a Galileo. Se usa el modelo cuadrático con $C_d = 0.47$ (esfera lisa) y la caída en el vacío como referencia. Las masas y los radios corresponden a los valores reglamentarios de cada deporte (la bola de boliche es de 16~lb). El Cuadro~\ref{tab:pelotas-param} muestra los parámetros y la velocidad terminal resultante.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Parámetros de las pelotas ($C_d = 0.47$).}
+  \label{tab:pelotas-param}
+  \begin{tabular}{@{}lrrrrrr@{}}
+    \toprule
+    Pelota & \thead{Masa\\(kg)} & \thead{Radio\\(m)} & \thead{Diámetro\\(m)} & \thead{Área $A$\\(m$^2$)} & \thead{$k$\\(kg/m)} & \thead{$\vt$\\(m/s)} \\
+    \midrule
+    Ping-pong & 0.0027 & 0.020  & 0.040  & 0.001257 & 0.000362 & 8.56 \\
+    Tenis     & 0.058  & 0.0335 & 0.067  & 0.003526 & 0.001015 & 23.68 \\
+    Béisbol   & 0.145  & 0.0366 & 0.0732 & 0.004208 & 0.001211 & 34.27 \\
+    Boliche   & 7.26   & 0.108  & 0.216  & 0.036644 & 0.010549 & 82.17 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+La pregunta que busca responder este escenario es qué tanto importa el aire en una caída corta, dependiendo de la relación entre la masa y el área de cada pelota.
+
+\subsection{Escenario 3: validación y convergencia}
+\label{sec:diseno-convergencia}
+
+Para validar los métodos y medir su orden de convergencia se diseñó el siguiente experimento:
+\begin{itemize}
+  \item \textbf{Caso de prueba:} el paracaidista del Escenario~1 con los modelos lineal y cuadrático, integrado con Euler y con RK4.
+  \item \textbf{Intervalo:} se integra en $[0, 20]$~s \emph{sin detener la simulación en el suelo}. Así el error medido corresponde solo al integrador y no se mezcla con el de la interpolación del impacto.
+  \item \textbf{Pasos de tiempo:} 13 valores de $\Delta t$: 1, 0.5, 0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.0025, 0.001, 0.0005, 0.00025 y 0.0001~s.
+  \item \textbf{Métrica:} para cada paso se mide el error absoluto máximo en $y$ y en $v$ contra la solución analítica.
+  \item \textbf{Orden observado:} es la pendiente de un ajuste lineal de $\log(\text{error})$ contra $\log(\Delta t)$. Se descartan el paso de \qty{1}{s} y los puntos con error menor a $10^{-9}$, donde domina el error de redondeo.
+  \item \textbf{Orden local:} también se calcula el orden entre pasos consecutivos,
+  $p_i = \dfrac{\log(e_{i-1}/e_i)}{\log(\Delta t_{i-1}/\Delta t_i)}$.
+\end{itemize}
+Adicionalmente, se repiten los escenarios 1 y 2 con Euler para medir el efecto del método en los resultados, y se integra el modelo cuadrático con un paso grande ($\Delta t = \qty{2}{s}$) para ilustrar visualmente la diferencia entre ambos métodos.
+

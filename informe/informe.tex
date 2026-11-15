@@ -1,0 +1,102 @@
+\documentclass[12pt,letterpaper]{article}
+
+% ---------------------------------------------------------------------------
+% Paquetes
+% ---------------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot,es-noshorthands]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{caption}
+\usepackage{siunitx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{figuras/}}
+
+\sisetup{
+  output-decimal-marker = {.},
+  group-digits = false,
+  exponent-product = \times,
+  per-mode = symbol
+}
+
+\captionsetup{font=small, labelfont=bf}
+\renewcommand{\theadfont}{\small\bfseries}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{gray},
+  numbers=none,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1
+}
+\AtBeginDocument{\renewcommand{\lstlistingname}{Listado}}
+
+% Operadores
+\DeclareMathOperator{\atanh}{atanh}
+\DeclareMathOperator{\acosh}{acosh}
+\newcommand{\vt}{v_t}
+\newcommand{\bs}{\mathbf{s}}
+\newcommand{\bk}{\mathbf{k}}
+\newcommand{\bff}{\mathbf{f}}
+
+% ---------------------------------------------------------------------------
+% Portada
+% ---------------------------------------------------------------------------
+\title{Caída libre con resistencia del aire\\[0.3em]
+\large Proyecto final de Modelación y Simulación 2026\\
+Opción 2: Simulación de un fenómeno dinámico}
+\author{Víctor Pérez, Melisa Mendizabal, Renato Rojas}
+\date{21 de noviembre de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Se simula la caída vertical de un cuerpo sometido a la gravedad y a la resistencia del aire, resolviendo numéricamente la ecuación de movimiento con dos métodos implementados desde cero: Euler explícito y Runge-Kutta de orden~4 (RK4). Se comparan tres modelos de arrastre (vacío, lineal y cuadrático) en dos escenarios: un paracaidista que salta desde \qty{4000}{m} y cuatro pelotas reales soltadas desde \qty{56}{m}, la altura aproximada de la Torre de Pisa. Todas las simulaciones se validan contra las soluciones analíticas de cada modelo. Los resultados muestran que la resistencia del aire reduce la rapidez de impacto del paracaidista de \qty{280}{m/s} a \qty{51}{m/s}, que la forma de la ley de arrastre cambia la transición hacia la velocidad terminal aun cuando esta es la misma, y que lo que determina la influencia del aire en una pelota es la relación entre su masa y su área, no la masa sola. El análisis de convergencia confirma los órdenes teóricos de ambos métodos (1.00 y 4.0) y muestra que, por debajo de cierto paso de tiempo, el error de RK4 queda dominado por el redondeo de punto flotante.
+\end{abstract}
+
+% ---------------------------------------------------------------------------
+% Cuerpo del informe, dividido en archivos para trabajar en paralelo.
+%   Parte 1 (secciones/parte1_teoria.tex): fenómeno, marco teórico, métodos y metodología.
+%   Parte 2 (secciones/parte2_resultados.tex y secciones/apendices.tex): resultados,
+%           conclusiones, limitaciones y apéndices.
+% ---------------------------------------------------------------------------
+\input{secciones/parte1_teoria}
+\input{secciones/parte2_resultados}
+
+% ===========================================================================
+\begin{thebibliography}{9}
+% ===========================================================================
+
+\bibitem{burden}
+R.~L. Burden y J.~D. Faires, \emph{Numerical Analysis}, 9.\textsuperscript{a} ed. Boston: Brooks/Cole, 2011.
+
+\bibitem{taylor}
+J.~R. Taylor, \emph{Classical Mechanics}. Sausalito: University Science Books, 2005.
+
+\bibitem{white}
+F.~M. White, \emph{Fluid Mechanics}, 7.\textsuperscript{a} ed. Nueva York: McGraw-Hill, 2011.
+
+\end{thebibliography}
+
+% ===========================================================================
+\appendix
+% ===========================================================================
+\input{secciones/apendices}
+
+\end{document}

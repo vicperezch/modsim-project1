@@ -1,0 +1,80 @@
+% Apéndices (Parte 2): tablas de convergencia y reproducción.
+% Se incluye desde informe.tex después de \appendix; no compilar este archivo solo.
+
+\section{Tablas completas de convergencia}
+\label{app:tablas}
+% ===========================================================================
+
+Errores absolutos máximos en el intervalo $[0, 20]$~s contra la solución analítica. La columna $p$ es el orden local calculado con el error en $v$; no se reporta cuando el error está por debajo de $10^{-9}$, donde domina el redondeo.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Convergencia del modelo lineal.}
+  \label{tab:conv-lineal}
+  \begin{tabular}{@{}lllclll@{}}
+    \toprule
+    & \multicolumn{3}{c}{Euler} & \multicolumn{3}{c}{RK4} \\
+    \cmidrule(lr){2-4} \cmidrule(l){5-7}
+    $\Delta t$ (s) & $e_y$ (m) & $e_v$ (m/s) & $p$ & $e_y$ (m) & $e_v$ (m/s) & $p$ \\
+    \midrule
+    1       & 10.157       & 1.968        & ---   & \num{1.327e-3} & \num{2.572e-4} & --- \\
+    0.5     & 4.855        & 0.9408       & 1.065 & \num{7.649e-5} & \num{1.482e-5} & 4.117 \\
+    0.25    & 2.376        & 0.4604       & 1.031 & \num{4.593e-6} & \num{8.901e-7} & 4.058 \\
+    0.1     & 0.9387       & 0.1819       & 1.013 & \num{1.148e-7} & \num{2.224e-8} & 4.026 \\
+    0.05    & 0.4675       & 0.09059      & 1.006 & \num{7.114e-9} & \num{1.379e-9} & 4.012 \\
+    0.025   & 0.2333       & 0.0452       & 1.003 & \num{4.425e-10} & \num{8.585e-11} & --- \\
+    0.01    & 0.09319      & 0.01806      & 1.001 & \num{1.046e-11} & \num{2.178e-12} & --- \\
+    0.005   & 0.04658      & 0.009026     & 1.001 & \num{1.137e-11} & \num{2.132e-13} & --- \\
+    0.0025  & 0.02328      & 0.004512     & 1.000 & \num{3.001e-11} & \num{1.421e-13} & --- \\
+    0.001   & 0.009312     & 0.001805     & 1.000 & \num{1.819e-11} & \num{1.918e-13} & --- \\
+    0.0005  & 0.004656     & 0.0009023    & 1.000 & \num{5.957e-11} & \num{2.416e-13} & --- \\
+    0.00025 & 0.002328     & 0.0004511    & 1.000 & \num{2.046e-11} & \num{3.766e-13} & --- \\
+    0.0001  & 0.0009312    & 0.0001804    & 1.000 & \num{5.366e-11} & \num{5.400e-13} & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Convergencia del modelo cuadrático.}
+  \label{tab:conv-cuadratico}
+  \begin{tabular}{@{}lllclll@{}}
+    \toprule
+    & \multicolumn{3}{c}{Euler} & \multicolumn{3}{c}{RK4} \\
+    \cmidrule(lr){2-4} \cmidrule(l){5-7}
+    $\Delta t$ (s) & $e_y$ (m) & $e_v$ (m/s) & $p$ & $e_y$ (m) & $e_v$ (m/s) & $p$ \\
+    \midrule
+    1       & 16.020       & 1.920        & ---   & \num{4.150e-3} & \num{1.273e-3} & --- \\
+    0.5     & 7.680        & 0.9324       & 1.042 & \num{2.621e-4} & \num{7.187e-5} & 4.146 \\
+    0.25    & 3.753        & 0.4583       & 1.025 & \num{1.649e-5} & \num{4.280e-6} & 4.070 \\
+    0.1     & 1.481        & 0.1816       & 1.010 & \num{4.239e-7} & \num{1.065e-7} & 4.032 \\
+    0.05    & 0.7373       & 0.09051      & 1.005 & \num{2.653e-8} & \num{6.590e-9} & 4.014 \\
+    0.025   & 0.3678       & 0.04518      & 1.002 & \num{1.656e-9} & \num{4.099e-10} & --- \\
+    0.01    & 0.1469       & 0.01806      & 1.001 & \num{4.047e-11} & \num{1.045e-11} & --- \\
+    0.005   & 0.07343      & 0.009025     & 1.000 & \num{7.731e-12} & \num{6.324e-13} & --- \\
+    0.0025  & 0.03671      & 0.004512     & 1.000 & \num{1.319e-11} & \num{1.350e-13} & --- \\
+    0.001   & 0.01468      & 0.001805     & 1.000 & \num{1.273e-11} & \num{2.629e-13} & --- \\
+    0.0005  & 0.00734      & 0.0009023    & 1.000 & \num{3.865e-11} & \num{2.274e-13} & --- \\
+    0.00025 & 0.00367      & 0.0004511    & 1.000 & \num{3.593e-11} & \num{4.761e-13} & --- \\
+    0.0001  & 0.001468     & 0.0001804    & 1.000 & \num{6.776e-11} & \num{5.613e-13} & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ===========================================================================
+\section{Reproducción de los resultados}
+% ===========================================================================
+
+El código se ejecuta con Python~3 y las dependencias de \texttt{requirements.txt} (\texttt{numpy}, \texttt{matplotlib} y \texttt{pillow}). Desde la raíz del repositorio:
+
+\begin{lstlisting}[language=bash]
+python -m venv .venv
+pip install -r requirements.txt
+python -m freefall paracaidista
+python -m freefall pelotas
+python -m freefall convergencia
+\end{lstlisting}
+
+Cada comando imprime una tabla de métricas y guarda sus figuras en la carpeta \texttt{results/}. Algunas opciones útiles son \texttt{--metodo euler} para usar Euler en los escenarios, \texttt{--dt} para cambiar el paso de tiempo y \texttt{--altura} para cambiar la altura inicial.
